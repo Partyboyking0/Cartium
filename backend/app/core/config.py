@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,9 +19,12 @@ class Settings(BaseSettings):
     app_name: str = "cartium-backend"
     environment: str = Field(default="development", validation_alias="APP_ENV")
     debug: bool = False
-    cors_allow_origins: list[str] = Field(
-        default_factory=lambda: [origin.strip() for origin in DEFAULT_CORS_ORIGINS.split(",") if origin.strip()]
-    )
+    cors_allow_origins_raw: str = Field(default=DEFAULT_CORS_ORIGINS, validation_alias="CORS_ALLOW_ORIGINS")
+
+    @computed_field
+    @property
+    def cors_allow_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allow_origins_raw.split(",") if origin.strip()]
     google_client_id: str = ""
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
@@ -52,20 +55,6 @@ class Settings(BaseSettings):
         if text in FALSY_VALUES:
             return False
         return False
-
-    @field_validator("cors_allow_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: object) -> list[str]:
-        if value is None:
-            value = DEFAULT_CORS_ORIGINS
-
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-
-        if isinstance(value, (list, tuple, set)):
-            return [str(origin).strip() for origin in value if str(origin).strip()]
-
-        return [origin.strip() for origin in DEFAULT_CORS_ORIGINS.split(",") if origin.strip()]
 
 
 settings = Settings()
