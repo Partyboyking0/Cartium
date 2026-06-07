@@ -1,5 +1,6 @@
 # Cartium Clone
 
+<<<<<<< HEAD
 Cartium is a modular e-commerce clone built with React + Vite and a FastAPI backend. It now implements the core buyer, seller, admin, checkout, review, and assistant flows described for the project while keeping the frontend split into pages/components and the backend split into routers/services.
 
 ## Implemented Features
@@ -41,6 +42,11 @@ Cartium is a modular e-commerce clone built with React + Vite and a FastAPI back
 - platform analytics: revenue, users, orders, growth stats
 - payment transaction monitoring and refund status updates
 - complaint handling and fraud flag visibility
+=======
+Full-stack Flipkart-style demo store built with React, FastAPI, Flask, and MySQL.
+### Live Demo: 
+- https://flipkart-clone-five-beryl.vercel.app/
+>>>>>>> ba5c3872c3ee1f94d1b240d18b08c7a85a9dfe1d
 
 ## Stack
 
