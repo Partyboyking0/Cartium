@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(ENV_FILE)
 
-DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,https://cartium-ten-ashen.vercel.app,"
+DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,https://cartium.vercel.app,"
 TRUTHY_VALUES = {"1", "true", "yes", "on", "debug", "development"}
 FALSY_VALUES = {"0", "false", "no", "off", "release", "prod", "production", ""}
 
