@@ -1,67 +1,81 @@
-# Cartium Clone
+# Cartium AI Powered E-Commerce Platform
 
-<<<<<<< HEAD
-Cartium is a modular e-commerce clone built with React + Vite and a FastAPI backend. It now implements the core buyer, seller, admin, checkout, review, and assistant flows described for the project while keeping the frontend split into pages/components and the backend split into routers/services.
+Cartium is a full-stack e-commerce platform built with React, FastAPI, MySQL, Razorpay, Google OAuth, and an AI shopping assistant powered by Hugging Face hosted inference.
 
-## Implemented Features
+The app supports buyer, seller, and admin workflows with product discovery, multi-cart shopping, secure checkout, order tracking, seller inventory tools, admin moderation, and AI-assisted shopping.
+
+## Tech Stack
+
+- Frontend: React + Vite
+- Backend: FastAPI + SQLAlchemy
+- Database: MySQL, with Railway MySQL support
+- Payments: Razorpay
+- Authentication: Email/password auth and Google OAuth
+- AI Assistant: Hugging Face API, ChromaDB RAG, sentence-transformers embeddings
+- Deployment: Vercel for frontend, Render for backend, Railway for MySQL
+
+## Main Features
 
 ### Buyer
 
-- login, signup, logout, and demo Google OAuth role selection
-- product listing with categories, search, price/rating filters through the API
-- product detail page with gallery, specs, wishlist action, reviews, and ratings
-- backend cart for logged-in users, with local guest-cart fallback
-- checkout with address and payment step before placing the order
-- payment modes: COD, UPI, card, Razorpay, Stripe, PayPal demo modes
-- order history and tracking: placed, packed, shipped, delivered
-- one-click reorder
-- account profile, multiple addresses, saved payment methods
-- wishlist and recently viewed products
-- AI shopping assistant with persistent history for logged-in users and local fallback for guests
+- Signup, login, logout, and Google OAuth
+- Role-based buyer/seller onboarding for OAuth users
+- Product catalog with categories, search, price filters, rating filters, and product details
+- Wishlist and recently viewed products
+- Multiple carts per user with create, rename, switch, delete, and active cart selection
+- Razorpay-only checkout with address capture before payment
+- Order history and tracking: Placed, Packed, Shipped, Delivered
+- One-click reorder
+- Profile, saved addresses, and saved payment method UI
+- Product reviews and ratings
+- AI shopping assistant with persistent chat history
 
 ### Seller
 
-- seller dashboard with revenue, orders count, units sold, low-stock alerts, and top products
-- add product, edit product, delete product APIs
-- image URL upload support through product forms/API payloads
-- set price, MRP, stock, discount through price/MRP, and low-stock threshold
-- auto out-of-stock visibility through stock values
-- view orders for seller products
-- update order item status: placed, packed, shipped, delivered
-- see reviews and respond to customer reviews
+- Seller dashboard with revenue, orders, units sold, low-stock alerts, and top products
+- Add, edit, and delete product listings
+- Upload product image URLs
+- Set price, MRP, stock, category, discount, and low-stock threshold
+- Inventory tracking and out-of-stock handling
+- View orders for seller products
+- Update item status: Packed, Shipped, Delivered
+- View customer reviews and respond to reviews
 
 ### Admin
 
-- admin dashboard with users, products, orders, payments, complaints, fraud flags, and growth stats
-- view all users
-- ban or activate users
-- assign buyer, seller, or admin roles
-- approve, reject, or suspend sellers through user moderation
-- approve/reject product listings
-- remove products
-- platform analytics: revenue, users, orders, growth stats
-- payment transaction monitoring and refund status updates
-- complaint handling and fraud flag visibility
-=======
-Full-stack Flipkart-style demo store built with React, FastAPI, Flask, and MySQL.
-### Live Demo: 
-- https://flipkart-clone-five-beryl.vercel.app/
->>>>>>> ba5c3872c3ee1f94d1b240d18b08c7a85a9dfe1d
+- Admin dashboard for users, sellers, products, orders, payments, complaints, and fraud flags
+- View users and activate/ban accounts
+- Assign roles: buyer, seller, admin
+- Approve, reject, or suspend sellers
+- Approve/reject product listings
+- Remove inappropriate products
+- Platform analytics: users, orders, revenue, growth stats
+- Payment transaction monitoring and refund status updates
+- Complaint handling and fraud flag review
 
-## Stack
+### AI Assistant
 
-- Frontend: React + Vite
-- Backend API: FastAPI + SQLAlchemy
-- Database: MySQL, including Railway MySQL support
-- Deployment: Render backend blueprint in `render.yaml`
+- Personalized prompt layer for Cartium tone and user context
+- ChromaDB RAG over products, FAQs, and policies
+- Backend actions for product search, product comparison, stock checks, cart actions, order status, payment help, and policies
+- Hugging Face hosted model support using `microsoft/Phi-3-mini-4k-instruct`
+- Fallback to grounded database answers for product, cart, order, and payment flows
 
 ## Project Structure
 
 ```text
 backend/
   app/
-    core/config.py
-    dependencies/auth.py
+    ai/
+      chatbot_service.py
+      intent.py
+      model_loader.py
+      prompts.py
+      rag.py
+    core/
+      config.py
+    dependencies/
+      auth.py
     routers/
       account.py
       admin.py
@@ -76,11 +90,18 @@ backend/
     services/
       catalog_service.py
       commerce.py
+      user_personalization_service.py
     database.py
     main.py
     models.py
     schemas.py
     seed.py
+  data/
+    faqs.json
+    policies.txt
+    users.json
+  chroma_db/
+  requirements.txt
 frontend/
   src/
     components/
@@ -91,59 +112,100 @@ frontend/
     styles.css
 ```
 
-## Demo Accounts
+## Local Requirements
 
-- Buyer: `aarav.buyer@example.com` / `password123`
-- Seller: `seller@example.com` / `seller123`
-- Admin: `admin@cartium.com` / `admin123`
+Recommended versions:
 
-Run the seeder after changing database settings so these accounts and the demo data exist.
+- Python 3.11 or 3.12
+- Node.js 18+
+- MySQL 8+ or Railway MySQL
 
-## Environment
+Avoid Python 3.14 for this project because some backend packages may require native wheel builds that are not always available yet.
+
+## Backend Environment
 
 Create `backend/.env` from `backend/.env.example`.
 
-Common local MySQL example:
+Local MySQL example:
 
 ```env
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/cartium_clone
 APP_ENV=development
 DEBUG=false
+DATABASE_URL=mysql+pymysql://root:password@localhost:3306/cartium
 CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+GOOGLE_CLIENT_ID=your_google_client_id
+RAZORPAY_KEY_ID=rzp_test_or_live_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+
+HUGGINGFACE_API_KEY=hf_your_token_here
+AI_MODEL_NAME=microsoft/Phi-3-mini-4k-instruct
+HUGGINGFACE_CHAT_URL=https://router.huggingface.co/featherless-ai/v1/completions
+HUGGINGFACE_TIMEOUT_SECONDS=90
 ```
 
-Railway MySQL on Render example:
+Railway MySQL example for Render:
 
 ```env
-DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE
 APP_ENV=production
 DEBUG=false
-CORS_ALLOW_ORIGINS=https://your-frontend-domain.vercel.app,http://localhost:5173,http://127.0.0.1:5173
+DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE
+CORS_ALLOW_ORIGINS=https://your-frontend-domain.vercel.app
+
+GOOGLE_CLIENT_ID=your_google_client_id
+RAZORPAY_KEY_ID=rzp_live_or_test_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+
+HUGGINGFACE_API_KEY=hf_your_token_here
+AI_MODEL_NAME=microsoft/Phi-3-mini-4k-instruct
+HUGGINGFACE_CHAT_URL=https://router.huggingface.co/featherless-ai/v1/completions
 ```
 
-If Railway gives you `mysql://...`, the backend also normalizes it to `mysql+pymysql://...`.
+If Railway gives a `mysql://...` URL, the backend normalizes it to `mysql+pymysql://...`.
 
-## Local Run
+## Frontend Environment
 
-Install backend dependencies:
+Create `frontend/.env` from `frontend/.env.example`.
+
+Local example:
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_RAZORPAY_KEY_ID=rzp_test_or_live_key
+```
+
+Production example:
+
+```env
+VITE_API_BASE_URL=https://your-render-backend.onrender.com
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_RAZORPAY_KEY_ID=rzp_live_or_test_key
+```
+
+Never put backend secrets such as `RAZORPAY_KEY_SECRET` or `HUGGINGFACE_API_KEY` in frontend env files.
+
+## Install And Run Locally
+
+From the project root:
 
 ```powershell
 python -m pip install -r backend\requirements.txt
 ```
 
-Seed MySQL:
+Create database tables and seed products/accounts:
 
 ```powershell
 python -m backend.app.seed
 ```
 
-Start backend from the repo root:
+Start backend:
 
 ```powershell
 python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Start frontend:
+Start frontend in a second terminal:
 
 ```powershell
 cd frontend
@@ -157,34 +219,126 @@ Open:
 http://127.0.0.1:5173/
 ```
 
-## API Surface
+## AI Knowledge Base Setup
+
+The AI assistant uses ChromaDB for retrieved product and policy context.
+
+After the backend is running, ingest the knowledge base:
+
+```powershell
+curl -X POST http://127.0.0.1:8000/api/ai/ingest
+```
+
+Successful response:
+
+```json
+{
+  "message": "Cartium AI knowledge base ingested successfully",
+  "counts": {
+    "products": 24,
+    "faqs": 4,
+    "policies": 5
+  }
+}
+```
+
+AI health check:
+
+```powershell
+curl http://127.0.0.1:8000/api/ai/health
+```
+
+Direct chat endpoint:
+
+```http
+POST /api/ai/chat
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "message": "Compare OnePlus Nord CE4 and Nothing Phone 2a"
+}
+```
+
+## Seeded Local Accounts
+
+These accounts are created by the seeder for local testing:
+
+- Buyer: `aarav.buyer@example.com` / `password123`
+- Seller: `seller@example.com` / `seller123`
+- Admin: `admin@cartium.com` / `admin123`
+
+Change these credentials before using the app outside local development.
+
+## Important API Endpoints
+
+### Health And Catalog
 
 - `GET /api/health`
 - `GET /api/products`
 - `GET /api/products/{id}`
+
+### Auth
+
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
 - `POST /api/auth/oauth`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
-- `GET/POST/PATCH/DELETE /api/cart`
-- `GET/PATCH /api/account/profile`
-- `GET/POST/PATCH/DELETE /api/account/addresses`
-- `GET/POST/DELETE /api/account/payment-methods`
-- `GET/POST /api/account/wishlist`
-- `GET /api/account/recently-viewed`
-- `POST /api/orders/checkout`
+
+### Cart And Checkout
+
+- `GET /api/cart`
+- `POST /api/cart`
+- `PATCH /api/cart/{item_id}`
+- `DELETE /api/cart/{item_id}`
+- `GET /api/cart/carts`
+- `POST /api/cart/carts`
+- `PATCH /api/cart/carts/{cart_id}`
+- `PATCH /api/cart/carts/{cart_id}/activate`
+- `DELETE /api/cart/carts/{cart_id}`
+- `POST /api/orders/razorpay/create`
+- `POST /api/orders/razorpay/verify`
 - `GET /api/orders`
 - `POST /api/orders/{id}/reorder`
-- `POST /api/orders/complaints`
+
+### Account
+
+- `GET /api/account/profile`
+- `PATCH /api/account/profile`
+- `GET /api/account/addresses`
+- `POST /api/account/addresses`
+- `PATCH /api/account/addresses/{id}`
+- `DELETE /api/account/addresses/{id}`
+- `GET /api/account/wishlist`
+- `POST /api/account/wishlist`
+- `DELETE /api/account/wishlist/{product_id}`
+- `GET /api/account/recently-viewed`
+
+### Reviews
+
 - `GET /api/reviews/product/{id}`
 - `POST /api/reviews`
-- `GET/POST/DELETE /api/ai/history`
+
+### AI
+
+- `GET /api/ai/health`
+- `POST /api/ai/ingest`
 - `POST /api/ai/chat`
+- `GET /api/ai/history`
+- `DELETE /api/ai/history`
+
+### Seller
+
 - `GET /api/seller/dashboard`
-- `POST/PATCH/DELETE /api/seller/products`
+- `POST /api/seller/products`
+- `PATCH /api/seller/products/{id}`
+- `DELETE /api/seller/products/{id}`
 - `PATCH /api/seller/orders/items/{id}/status`
 - `POST /api/seller/reviews/{id}/response`
+
+### Admin
+
 - `GET /api/admin/dashboard`
 - `PATCH /api/admin/users/{id}`
 - `PATCH /api/admin/products/{id}/moderation`
@@ -192,75 +346,62 @@ http://127.0.0.1:5173/
 - `PATCH /api/admin/transactions/{id}/refund`
 - `PATCH /api/admin/complaints/{id}`
 
-## Verification
+## Deployment Notes
 
-Latest checks performed:
+Recommended deployment split:
 
-- `python -m compileall backend`
-- FastAPI import check
-- `GET /api/health` -> `200`
-- `GET /api/products` -> `200` with 24 products
-- `GET /api/products/1` -> `200`
-- `npm run build`
+- Frontend: Vercel
+- Backend: Render
+- Database: Railway MySQL
 
-Database-backed auth, checkout, seller, and admin routes require MySQL tables to be seeded with `python -m backend.app.seed`.
-
-
-## Cartium AI Assistant Setup
-
-Cartium includes a FastAPI AI assistant with three layers: prompt personalization, ChromaDB RAG, and backend actions for catalog, cart, and order workflows.
-
-### Install AI dependencies
-
-Add this to `backend/.env`:
-
-```env
-HUGGINGFACE_API_KEY=hf_your_token_here
-AI_MODEL_NAME=microsoft/Phi-3-mini-4k-instruct
-```
-
-Then install dependencies:
+Backend build/start on Render:
 
 ```bash
-python -m pip install -r backend/requirements.txt
+pip install -r backend/requirements.txt
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Cartium uses the Hugging Face Inference Providers API for `microsoft/Phi-3-mini-4k-instruct`, so the model is not downloaded locally. Set `HUGGINGFACE_API_KEY` in `backend/.env` locally or in your Render environment variables. If the API or Chroma dependencies are unavailable, the assistant falls back to database-backed product, cart, and order actions.
+Set Render root directory to the repository root unless your Render service is configured differently.
 
-### Ingest the knowledge base
+Add all backend environment variables in Render's Environment panel. Do not commit real `.env` files.
 
-Start the backend, then run:
+Frontend build on Vercel:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/ai/ingest
+cd frontend
+npm install
+npm run build
 ```
 
-This stores approved products, FAQs, and policies in `backend/chroma_db`.
+Set Vercel output directory to:
 
-### Chat endpoint
-
-Authenticated frontend requests should call:
-
-```http
-POST /api/ai/chat
-{
-  "user_id": "user_001",
-  "message": "Suggest sneakers under Rs 2000"
-}
+```text
+frontend/dist
 ```
 
-Response:
+## Verification Checklist
 
-```json
-{
-  "reply": "...",
-  "intent": "product_search",
-  "sources": []
-}
+Run these before deployment:
+
+```powershell
+python -m compileall backend\app
+cd frontend
+npm run build
 ```
 
-Health check:
+Then verify locally:
 
-```http
-GET /api/ai/health
-```
+- `GET http://127.0.0.1:8000/api/health` returns `ok`
+- `GET http://127.0.0.1:8000/api/products` returns products
+- `POST http://127.0.0.1:8000/api/ai/ingest` ingests products, FAQs, and policies
+- Login works with a seeded account
+- Razorpay checkout opens and verifies payment
+- AI chat answers product, payment, cart, and order questions without leaking prompt context
+
+## Security Notes
+
+- Keep `backend/.env` private.
+- Keep `frontend/.env` free of secrets.
+- Use HTTPS domains in production CORS settings.
+- Rotate seeded local passwords before production use.
+- Use Razorpay live keys only after full checkout testing.
