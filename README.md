@@ -1,185 +1,143 @@
-# Flipkart Clone
+# Cartium Clone
 
-Full-stack Flipkart-style demo store built with React, FastAPI, Flask, and MySQL.
+Cartium is a modular e-commerce clone built with React + Vite and a FastAPI backend. It now implements the core buyer, seller, admin, checkout, review, and assistant flows described for the project while keeping the frontend split into pages/components and the backend split into routers/services.
+
+## Implemented Features
+
+### Buyer
+
+- login, signup, logout, and demo Google OAuth role selection
+- product listing with categories, search, price/rating filters through the API
+- product detail page with gallery, specs, wishlist action, reviews, and ratings
+- backend cart for logged-in users, with local guest-cart fallback
+- checkout with address and payment step before placing the order
+- payment modes: COD, UPI, card, Razorpay, Stripe, PayPal demo modes
+- order history and tracking: placed, packed, shipped, delivered
+- one-click reorder
+- account profile, multiple addresses, saved payment methods
+- wishlist and recently viewed products
+- AI shopping assistant with persistent history for logged-in users and local fallback for guests
+
+### Seller
+
+- seller dashboard with revenue, orders count, units sold, low-stock alerts, and top products
+- add product, edit product, delete product APIs
+- image URL upload support through product forms/API payloads
+- set price, MRP, stock, discount through price/MRP, and low-stock threshold
+- auto out-of-stock visibility through stock values
+- view orders for seller products
+- update order item status: placed, packed, shipped, delivered
+- see reviews and respond to customer reviews
+
+### Admin
+
+- admin dashboard with users, products, orders, payments, complaints, fraud flags, and growth stats
+- view all users
+- ban or activate users
+- assign buyer, seller, or admin roles
+- approve, reject, or suspend sellers through user moderation
+- approve/reject product listings
+- remove products
+- platform analytics: revenue, users, orders, growth stats
+- payment transaction monitoring and refund status updates
+- complaint handling and fraud flag visibility
 
 ## Stack
 
 - Frontend: React + Vite
-- Main API: FastAPI + SQLAlchemy
-- Companion service: Flask
-- Database: MySQL
-- AI support bot: OpenAI Responses API
-
-## What The App Includes
-
-- Buyer login, signup, and demo Google sign-in
-- Product listing with categories
-- Search and filters for category, price, and rating
-- Product detail page with gallery, specs, reviews, and ratings
-- Cart and wishlist
-- Checkout with address capture
-- Payment step before order placement
-- Payment methods: Razorpay, Stripe, PayPal, UPI, card, COD
-- Order history and tracking status
-- Buyer and seller views
-- Admin dashboard
-- Verified-purchase reviews
-- OpenAI-powered chat widget for shopping help
+- Backend API: FastAPI + SQLAlchemy
+- Database: MySQL, including Railway MySQL support
+- Deployment: Render backend blueprint in `render.yaml`
 
 ## Project Structure
 
 ```text
 backend/
   app/
+    core/config.py
+    dependencies/auth.py
+    routers/
+      account.py
+      admin.py
+      ai.py
+      auth.py
+      cart.py
+      catalog.py
+      health.py
+      orders.py
+      reviews.py
+      seller.py
+    services/
+      catalog_service.py
+      commerce.py
     database.py
     main.py
     models.py
     schemas.py
     seed.py
-  .env.example
-  flask_service.py
-  requirements.txt
 frontend/
   src/
+    components/
+    pages/
+    utils/
     App.jsx
     api.js
-    main.jsx
     styles.css
-  package.json
-README.md
 ```
 
 ## Demo Accounts
 
-- Buyer
-  - Email: `aarav.buyer@example.com`
-  - Password: `password123`
-- Seller
-  - Email: `seller@example.com`
-  - Password: `seller123`
-- Admin
-  - Email: `admin@flipkart.com`
-  - Password: `admin123`
+- Buyer: `aarav.buyer@example.com` / `password123`
+- Seller: `seller@example.com` / `seller123`
+- Admin: `admin@cartium.com` / `admin123`
 
-## 1. Create The Database
+Run the seeder after changing database settings so these accounts and the demo data exist.
 
-Open MySQL and create the database:
+## Environment
 
-```sql
-CREATE DATABASE flipkart_clone CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+Create `backend/.env` from `backend/.env.example`.
 
-## 2. Create `backend/.env`
-
-Use [`backend/.env.example`](/c:/Users/Acer/Desktop/Flipkart/backend/.env.example) as the template.
-
-Quick copy commands:
-
-```powershell
-Copy-Item backend\.env.example backend\.env
-```
-
-```cmd
-copy backend\.env.example backend\.env
-```
-
-Example:
+Common local MySQL example:
 
 ```env
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/flipkart_clone
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4.1-mini
-
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
-
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=
-EMAIL_PASSWORD=
-
-ADMIN_EMAIL=admin@flipkart.com
-ADMIN_PASSWORD=admin123
+DATABASE_URL=mysql+pymysql://root:password@localhost:3306/cartium_clone
+APP_ENV=development
+DEBUG=false
+CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-Notes:
+Railway MySQL on Render example:
 
-- `OPENAI_API_KEY` is required for the chatbot.
-- Razorpay and email settings are optional for local demo runs.
+```env
+DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE
+APP_ENV=production
+DEBUG=false
+CORS_ALLOW_ORIGINS=https://your-frontend-domain.vercel.app,http://localhost:5173,http://127.0.0.1:5173
+```
 
-## 3. Install Backend Dependencies
+If Railway gives you `mysql://...`, the backend also normalizes it to `mysql+pymysql://...`.
 
-From the repo root:
+## Local Run
+
+Install backend dependencies:
 
 ```powershell
 python -m pip install -r backend\requirements.txt
 ```
 
-## 4. Seed The Database
-
-From the repo root:
+Seed MySQL:
 
 ```powershell
-$env:DATABASE_URL="mysql+pymysql://root:password@localhost:3306/flipkart_clone"
 python -m backend.app.seed
 ```
 
-CMD version:
-
-```cmd
-set DATABASE_URL=mysql+pymysql://root:password@localhost:3306/flipkart_clone
-python -m backend.app.seed
-```
-
-## 5. Start FastAPI
-
-PowerShell:
+Start backend from the repo root:
 
 ```powershell
-cd backend
-$env:DATABASE_URL="mysql+pymysql://root:password@localhost:3306/flipkart_clone"
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-CMD:
-
-```cmd
-cd backend
-set DATABASE_URL=mysql+pymysql://root:password@localhost:3306/flipkart_clone
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-Health check:
-
-```text
-http://127.0.0.1:8000/api/health
-```
-
-## 6. Start Flask
-
-Open a second terminal:
-
-```powershell
-cd backend
-python flask_service.py
-```
-
-CMD:
-
-```cmd
-cd backend
-python flask_service.py
-```
-
-Health check:
-
-```text
-http://127.0.0.1:5001/health
-```
-
-## 7. Start Frontend
-
-Open a third terminal:
+Start frontend:
 
 ```powershell
 cd frontend
@@ -187,94 +145,116 @@ npm install
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-CMD:
-
-```cmd
-cd frontend
-npm install
-npm run dev -- --host 127.0.0.1 --port 5173
-```
-
-App URL:
+Open:
 
 ```text
 http://127.0.0.1:5173/
 ```
 
-Do not open `frontend/index.html` directly. Run Vite and use the local dev URL.
+## API Surface
 
-## Quick Run Order
+- `GET /api/health`
+- `GET /api/products`
+- `GET /api/products/{id}`
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/oauth`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `GET/POST/PATCH/DELETE /api/cart`
+- `GET/PATCH /api/account/profile`
+- `GET/POST/PATCH/DELETE /api/account/addresses`
+- `GET/POST/DELETE /api/account/payment-methods`
+- `GET/POST /api/account/wishlist`
+- `GET /api/account/recently-viewed`
+- `POST /api/orders/checkout`
+- `GET /api/orders`
+- `POST /api/orders/{id}/reorder`
+- `POST /api/orders/complaints`
+- `GET /api/reviews/product/{id}`
+- `POST /api/reviews`
+- `GET/POST/DELETE /api/ai/history`
+- `POST /api/ai/chat`
+- `GET /api/seller/dashboard`
+- `POST/PATCH/DELETE /api/seller/products`
+- `PATCH /api/seller/orders/items/{id}/status`
+- `POST /api/seller/reviews/{id}/response`
+- `GET /api/admin/dashboard`
+- `PATCH /api/admin/users/{id}`
+- `PATCH /api/admin/products/{id}/moderation`
+- `DELETE /api/admin/products/{id}`
+- `PATCH /api/admin/transactions/{id}/refund`
+- `PATCH /api/admin/complaints/{id}`
 
-Start things in this order:
+## Verification
 
-1. MySQL
-2. `python -m backend.app.seed`
-3. FastAPI on `127.0.0.1:8000`
-4. Flask on `127.0.0.1:5001`
-5. Vite on `127.0.0.1:5173`
+Latest checks performed:
 
-## Render Backend Deploy
+- `python -m compileall backend`
+- FastAPI import check
+- `GET /api/health` -> `200`
+- `GET /api/products` -> `200` with 24 products
+- `GET /api/products/1` -> `200`
+- `npm run build`
 
-If you deploy the backend on Render, this repo's [`render.yaml`](/c:/Users/Acer/Desktop/Flipkart/render.yaml) now does three important things for you:
+Database-backed auth, checkout, seller, and admin routes require MySQL tables to be seeded with `python -m backend.app.seed`.
 
-- pins Python to `3.11.11`
-- installs dependencies with writable Cargo temp directories
-- avoids `uvicorn[standard]`, which can pull in extra build-time native dependencies that are not needed on Render
 
-If your Render service was created manually instead of from the blueprint, copy these settings into the Render dashboard:
+## Cartium AI Assistant Setup
 
-```bash
-export CARGO_HOME=/tmp/cargo
-export RUSTUP_HOME=/tmp/rustup
-python -m pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
-```
+Cartium includes a FastAPI AI assistant with three layers: prompt personalization, ChromaDB RAG, and backend actions for catalog, cart, and order workflows.
 
-Also set:
+### Install AI dependencies
+
+Add this to `backend/.env`:
 
 ```env
-PYTHON_VERSION=3.11.11
+HUGGINGFACE_API_KEY=hf_your_token_here
+AI_MODEL_NAME=microsoft/Phi-3-mini-4k-instruct
 ```
 
-If your build log shows `python3.14`, `maturin`, `cargo metadata`, or `/usr/local/cargo` read-only errors, the service is still using the wrong Python/runtime settings and needs to be redeployed after updating them.
+Then install dependencies:
 
-## Useful Endpoints
+```bash
+python -m pip install -r backend/requirements.txt
+```
 
-- Health: `http://127.0.0.1:8000/api/health`
-- Products: `http://127.0.0.1:8000/api/products`
-- Orders: `http://127.0.0.1:8000/api/orders`
-- AI chat: `http://127.0.0.1:8000/api/ai/chat`
-- Flask health: `http://127.0.0.1:5001/health`
+Cartium uses the Hugging Face Inference Providers API for `microsoft/Phi-3-mini-4k-instruct`, so the model is not downloaded locally. Set `HUGGINGFACE_API_KEY` in `backend/.env` locally or in your Render environment variables. If the API or Chroma dependencies are unavailable, the assistant falls back to database-backed product, cart, and order actions.
 
-## Chatbot Setup
+### Ingest the knowledge base
 
-The chat widget is built into the frontend and calls the FastAPI route at `/api/ai/chat`.
+Start the backend, then run:
 
-If `OPENAI_API_KEY` is missing, the app will return a helpful backend error instead of silently failing.
+```bash
+curl -X POST http://127.0.0.1:8000/api/ai/ingest
+```
 
-The chatbot uses the store catalog, current cart, and recent orders as context so it can answer questions about:
+This stores approved products, FAQs, and policies in `backend/chroma_db`.
 
-- product suggestions
-- checkout and payment options
-- recent orders
-- buyer and seller workflows
+### Chat endpoint
 
-## What I Verified
+Authenticated frontend requests should call:
 
-- Backend import works
-- `python -m compileall backend` passes
-- Frontend production build passes
+```http
+POST /api/ai/chat
+{
+  "user_id": "user_001",
+  "message": "Suggest sneakers under Rs 2000"
+}
+```
 
-## Troubleshooting
+Response:
 
-- Blank frontend page:
-  - Make sure you opened `http://127.0.0.1:5173/`
-  - Hard refresh with `Ctrl + Shift + R`
-- `mysqladmin` not recognized:
-  - Add your MySQL `bin` directory to `PATH`
-- Chatbot says OpenAI is not configured:
-  - Add `OPENAI_API_KEY` to `backend/.env`
-- Products or cart fail to load:
-  - Confirm MySQL is running
-  - Rerun `python -m backend.app.seed`
-  - Check `http://127.0.0.1:8000/api/health`
+```json
+{
+  "reply": "...",
+  "intent": "product_search",
+  "sources": []
+}
+```
+
+Health check:
+
+```http
+GET /api/ai/health
+```

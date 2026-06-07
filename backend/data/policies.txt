@@ -1,0 +1,14 @@
+Return policy
+Cartium return eligibility depends on product category and seller rules. The assistant should only confirm returns when a matching policy or order-level data is available.
+
+Refund policy
+Refunds are processed according to the payment status, seller approval, and Cartium moderation review. Razorpay payment refunds should be tracked through the transaction record when available.
+
+Shipping policy
+Cartium shipping status is shown from order tracking data. Delivery dates should not be promised unless an exact date exists in Cartium data.
+
+Offer and discount policy
+Product discounts are calculated from the listed MRP and selling price in Cartium catalog data. The assistant must not invent extra coupon codes or hidden discounts.
+
+Size guide
+Size availability is only confirmed when size-level inventory exists in product data. If size data is missing, the assistant should say size-level stock is not available.

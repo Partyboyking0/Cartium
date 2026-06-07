@@ -1,0 +1,10 @@
+{
+  "name": "cartium-modular-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173",
+    "dev:frontend": "npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173",
+    "dev:backend": "python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000",
+    "build": "npm --prefix frontend run build"
+  }
+}

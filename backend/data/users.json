@@ -1,0 +1,14 @@
+{
+  "user_001": {
+    "name": "Parth",
+    "preferred_categories": ["Footwear", "Clothing"],
+    "budget_range": "under Rs 2000",
+    "sizes": {
+      "shoes": "9",
+      "clothing": "M"
+    },
+    "wishlist": ["CTM101"],
+    "recently_viewed": ["CTM101", "CTM102"],
+    "cart": []
+  }
+}

@@ -2,8 +2,9 @@ import hashlib
 import os
 
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
-from .database import Base, SessionLocal, engine
+from .database import Base, DATABASE_URL, SessionLocal, engine
 from .models import (
     Category,
     Complaint,
@@ -411,6 +412,31 @@ PRODUCTS = [
 PBKDF2_ITERATIONS = 390000
 
 
+def describe_database_target() -> str:
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(DATABASE_URL)
+        host = parsed.hostname or "unknown-host"
+        port = parsed.port or 3306
+        database = parsed.path.lstrip("/") or "unknown-database"
+        user = parsed.username or "unknown-user"
+        return f"{parsed.scheme}://{user}:<redacted>@{host}:{port}/{database}"
+    except Exception:
+        return "<unable to parse DATABASE_URL>"
+
+
+def explain_connection_failure(exc: OperationalError) -> RuntimeError:
+    target = describe_database_target()
+    return RuntimeError(
+        "Could not connect to MySQL before seeding.\n"
+        f"Target: {target}\n"
+        "Check that DATABASE_URL points to the Railway MySQL service public URL, not another service, and that the public TCP proxy port is current. "
+        "If you changed Railway services, copy MYSQL_PUBLIC_URL again and use mysql+pymysql://USER:PASSWORD@HOST:PORT/DATABASE.\n"
+        f"Original error: {exc}"
+    )
+
+
 def hash_password(password: str) -> str:
     salt = os.urandom(16).hex()
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), PBKDF2_ITERATIONS).hex()
@@ -418,7 +444,10 @@ def hash_password(password: str) -> str:
 
 
 def run():
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError as exc:
+        raise explain_connection_failure(exc) from exc
     with engine.begin() as connection:
         statements = [
             "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(160) NOT NULL, email VARCHAR(180) NOT NULL UNIQUE, phone VARCHAR(20) NOT NULL, role VARCHAR(20) NOT NULL, address_line VARCHAR(255) DEFAULT '', city VARCHAR(100) DEFAULT '', state VARCHAR(100) DEFAULT '', pincode VARCHAR(12) DEFAULT '', store_name VARCHAR(160) DEFAULT '')",
@@ -504,13 +533,36 @@ def run():
                     store_name="Priya Digital & Daily Needs",
                 )
             )
+        if not db.get(User, 3):
+            db.add(
+                User(
+                    id=3,
+                    name="Cartium Admin",
+                    email="admin@cartium.com",
+                    phone="9000000000",
+                    role="admin",
+                    password_hash=hash_password("admin123"),
+                    oauth_provider="",
+                    google_sub="",
+                    is_active=True,
+                    seller_status="APPROVED",
+                    address_line="Platform HQ",
+                    city="Bengaluru",
+                    state="Karnataka",
+                    pincode="560001",
+                    store_name="Cartium Admin",
+                )
+            )
         db.commit()
         buyer = db.get(User, 1)
         seller = db.get(User, 2)
+        admin = db.get(User, 3)
         if buyer and (not buyer.password_hash or not buyer.password_hash.startswith("pbkdf2_sha256$")):
             buyer.password_hash = hash_password("password123")
         if seller and (not seller.password_hash or not seller.password_hash.startswith("pbkdf2_sha256$")):
             seller.password_hash = hash_password("seller123")
+        if admin and (not admin.password_hash or not admin.password_hash.startswith("pbkdf2_sha256$")):
+            admin.password_hash = hash_password("admin123")
         db.commit()
 
         db.query(Product).filter(Product.seller_id.is_(None)).update({"seller_id": 2})
@@ -689,5 +741,12 @@ def seed_demo_order_data(db):
 
 
 if __name__ == "__main__":
-    run()
+    try:
+        run()
+    except RuntimeError as exc:
+        print(exc)
+        raise SystemExit(1) from None
     print("Database seeded.")
+
+
+

@@ -83,9 +83,27 @@ class AuthOut(BaseModel):
     token: str
 
 
+class CartCreate(BaseModel):
+    name: str = Field(default="Main cart", min_length=2, max_length=80)
+
+
+class CartRename(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+
+
+class CartMetaOut(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    is_active: bool
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
 class CartAdd(BaseModel):
     product_id: int
     quantity: int = Field(default=1, ge=1, le=10)
+    cart_id: int | None = None
 
 
 class CartUpdate(BaseModel):
@@ -108,8 +126,14 @@ class CartSummaryOut(BaseModel):
 
 
 class CartOut(BaseModel):
+    cart: CartMetaOut | None = None
     items: list[CartLineOut]
     summary: CartSummaryOut
+
+
+class CartListOut(BaseModel):
+    items: list[CartMetaOut]
+    active_cart_id: int | None
 
 
 class WishlistOut(BaseModel):
@@ -162,14 +186,12 @@ class AccountUpdateIn(BaseModel):
 
 
 class PaymentIn(BaseModel):
-    method: str = Field(pattern="^(UPI|CARD|COD|STRIPE|RAZORPAY|PAYPAL)$")
+    method: str = Field(default="RAZORPAY", pattern="^RAZORPAY$")
     payer_name: str = Field(min_length=2, max_length=160)
-    upi_id: str | None = Field(default=None, max_length=120)
-    card_last4: str | None = Field(default=None, max_length=4)
     payment_reference: str | None = Field(default=None, max_length=120)
     razorpay_order_id: str | None = Field(default=None, max_length=120)
 
-    @field_validator("upi_id", "card_last4", "payment_reference", "razorpay_order_id", mode="before")
+    @field_validator("payment_reference", "razorpay_order_id", mode="before")
     @classmethod
     def blank_to_none(cls, value):
         if value == "":
@@ -178,10 +200,6 @@ class PaymentIn(BaseModel):
 
     @model_validator(mode="after")
     def validate_method_details(self):
-        if self.method == "UPI" and not self.upi_id:
-            raise ValueError("UPI ID is required for UPI payment")
-        if self.method == "CARD" and (not self.card_last4 or len(self.card_last4) != 4):
-            raise ValueError("Last 4 card digits are required for card payment")
         return self
 
 
@@ -222,6 +240,10 @@ class SavedPaymentMethodOut(BaseModel):
 class CheckoutIn(BaseModel):
     address: AddressIn
     payment: PaymentIn
+
+
+class RazorpayCheckoutCreateIn(BaseModel):
+    address: AddressIn
 
 
 class OrderItemOut(BaseModel):
@@ -270,6 +292,10 @@ class RazorpayVerifyIn(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
+
+
+class RazorpayCheckoutVerifyIn(RazorpayVerifyIn):
+    address: AddressIn
 
 
 # ── Seller schemas ────────────────────────────────────────────────────────────
@@ -497,8 +523,32 @@ class AIChatMessageOut(BaseModel):
     content: str
     model_name: str
     created_at: datetime
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "protected_namespaces": ()}
 
 
 class AIChatHistoryOut(BaseModel):
     items: list[AIChatMessageOut]
+
+
+
+class SourceDocument(BaseModel):
+    type: str | None = None
+    name: str | None = None
+    product_id: str | None = None
+    score: float | None = None
+
+
+class ChatRequest(BaseModel):
+    user_id: str | None = None
+    message: str = Field(min_length=1, max_length=4000)
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    intent: str
+    sources: list[SourceDocument] = Field(default_factory=list)
+
+
+class IngestResponse(BaseModel):
+    message: str
+    counts: dict[str, int] = Field(default_factory=dict)

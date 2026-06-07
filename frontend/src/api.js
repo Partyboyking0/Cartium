@@ -1,180 +1,108 @@
-const RAW_API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:8000";
-const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, "");
-const TOKEN_KEY = "flipkart_auth_token";
-export const AUTH_EXPIRED_EVENT = "flipkart-auth-expired";
-let authToken = "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
-function readStoredToken() {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(TOKEN_KEY) || "";
+let authToken = localStorage.getItem("cartium-token") || "";
+
+export function setAuthToken(token) {
+  authToken = token || "";
+  if (authToken) {
+    localStorage.setItem("cartium-token", authToken);
+  } else {
+    localStorage.removeItem("cartium-token");
+  }
 }
 
-function writeStoredToken(token) {
-  if (typeof window === "undefined") return;
-  if (token) window.localStorage.setItem(TOKEN_KEY, token);
-  else window.localStorage.removeItem(TOKEN_KEY);
-}
-
-function clearTokenState() {
-  authToken = "";
-  writeStoredToken("");
-}
-
-function notifyAuthExpired(message) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent(AUTH_EXPIRED_EVENT, {
-      detail: { message: message || "Session expired. Please login again." },
-    }),
-  );
+export function getAuthToken() {
+  return authToken;
 }
 
 async function request(path, options = {}) {
-  const { auth = true, headers = {}, ...fetchOptions } = options;
-  const hasAuthHeader = auth && Boolean(authToken);
-  const hasBody = fetchOptions.body !== undefined;
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      ...(hasAuthHeader ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...headers,
-    },
-    ...fetchOptions,
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    const detail = Array.isArray(payload.detail)
-      ? payload.detail.map((item) => item.msg).join(", ")
-      : payload.detail;
-    if (response.status === 401 && hasAuthHeader) {
-      clearTokenState();
-      notifyAuthExpired(detail);
+    let message = "";
+    try {
+      const error = await response.json();
+      message = error.detail || JSON.stringify(error);
+    } catch {
+      message = await response.text();
     }
-    throw new Error(detail || "Something went wrong");
+    throw new Error(message || `Request failed with ${response.status}`);
   }
 
-  return response.json();
+  return response.status === 204 ? null : response.json();
 }
 
+const json = (body, method = "POST") => ({ method, body: JSON.stringify(body) });
 
 export const api = {
-  hydrateToken: () => {
-    authToken = readStoredToken();
-    return authToken;
-  },
-  setToken: (token) => {
-    authToken = token || "";
-    writeStoredToken(authToken);
-  },
-  clearToken: () => {
-    clearTokenState();
-  },
-  hasToken: () => Boolean(authToken),
-
-  // Auth
-  signup: (payload) =>
-    request("/api/auth/signup", { method: "POST", body: JSON.stringify(payload), auth: false }),
-  login: (payload) =>
-    request("/api/auth/login", { method: "POST", body: JSON.stringify(payload), auth: false }),
-  googleLogin: (payload) =>
-    request("/api/auth/oauth/google", { method: "POST", body: JSON.stringify(payload), auth: false }),
-  me: () => request("/api/auth/me"),
-  logout: () => request("/api/auth/logout", { method: "POST" }),
-  aiChat: (payload) =>
-    request("/api/ai/chat", { method: "POST", body: JSON.stringify(payload) }),
-  aiHistory: () => request("/api/ai/history"),
-  clearAiHistory: () => request("/api/ai/history", { method: "DELETE" }),
-
-  // Catalog
-  categories: () => request("/api/categories"),
-  users: () => request("/api/users"),
-  user: (id) => request(`/api/users/${id}`),
+  health: () => request("/api/health"),
   products: (params = {}) => {
-    const search = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) search.set(key, value);
-    });
-    const query = search.toString();
+    const query = new URLSearchParams(params).toString();
     return request(`/api/products${query ? `?${query}` : ""}`);
   },
   product: (id) => request(`/api/products/${id}`),
 
-  // Cart
-  cart: () => request("/api/cart"),
-  addToCart: (productId, quantity = 1) =>
-    request("/api/cart", { method: "POST", body: JSON.stringify({ product_id: productId, quantity }) }),
-  updateCart: (itemId, quantity) =>
-    request(`/api/cart/${itemId}`, { method: "PATCH", body: JSON.stringify({ quantity }) }),
+  signup: (payload) => request("/api/auth/signup", json(payload)),
+  login: (payload) => request("/api/auth/login", json(payload)),
+  oauth: (payload) => request("/api/auth/oauth", json(payload)),
+  me: () => request("/api/auth/me"),
+  logout: () => request("/api/auth/logout", { method: "POST" }),
+
+  cart: (cartId) => request(`/api/cart${cartId ? `?cart_id=${cartId}` : ""}`),
+  cartList: () => request("/api/cart/carts"),
+  createCart: (payload) => request("/api/cart/carts", json(payload)),
+  renameCart: (cartId, payload) => request(`/api/cart/carts/${cartId}`, json(payload, "PATCH")),
+  activateCart: (cartId) => request(`/api/cart/carts/${cartId}/activate`, { method: "PATCH" }),
+  deleteCart: (cartId) => request(`/api/cart/carts/${cartId}`, { method: "DELETE" }),
+  addCart: (payload) => request("/api/cart", json(payload)),
+  updateCart: (itemId, payload) => request(`/api/cart/${itemId}`, json(payload, "PATCH")),
   removeCart: (itemId) => request(`/api/cart/${itemId}`, { method: "DELETE" }),
+  clearCart: (cartId) => request(`/api/cart${cartId ? `?cart_id=${cartId}` : ""}`, { method: "DELETE" }),
 
-  // Wishlist
-  wishlist: () => request("/api/wishlist"),
-  toggleWishlist: (productId) => request(`/api/wishlist/${productId}`, { method: "POST" }),
-
-  // Reviews
-  reviews: (productId) => request(`/api/products/${productId}/reviews`),
-  addReview: (payload) =>
-    request("/api/reviews", { method: "POST", body: JSON.stringify(payload) }),
-
-  // Orders
-  placeOrder: (payload) =>
-    request("/api/orders", { method: "POST", body: JSON.stringify(payload) }),
-  orders: () => request("/api/orders"),
-  order: (orderNumber) => request(`/api/orders/${orderNumber}`),
-  reorder: (orderNumber) => request(`/api/orders/${orderNumber}/reorder`, { method: "POST" }),
-
-  // Account
-  updateProfile: (payload) =>
-    request("/api/account/profile", { method: "PATCH", body: JSON.stringify(payload) }),
+  profile: () => request("/api/account/profile"),
+  updateProfile: (payload) => request("/api/account/profile", json(payload, "PATCH")),
   addresses: () => request("/api/account/addresses"),
-  addAddress: (payload) =>
-    request("/api/account/addresses", { method: "POST", body: JSON.stringify(payload) }),
-  updateAddress: (addressId, payload) =>
-    request(`/api/account/addresses/${addressId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  deleteAddress: (addressId) => request(`/api/account/addresses/${addressId}`, { method: "DELETE" }),
+  addAddress: (payload) => request("/api/account/addresses", json(payload)),
+  updateAddress: (id, payload) => request(`/api/account/addresses/${id}`, json(payload, "PATCH")),
   paymentMethods: () => request("/api/account/payment-methods"),
-  addPaymentMethod: (payload) =>
-    request("/api/account/payment-methods", { method: "POST", body: JSON.stringify(payload) }),
-  deletePaymentMethod: (paymentId) => request(`/api/account/payment-methods/${paymentId}`, { method: "DELETE" }),
+  addPaymentMethod: (payload) => request("/api/account/payment-methods", json(payload)),
+  wishlist: () => request("/api/account/wishlist"),
+  toggleWishlist: (productId) => request(`/api/account/wishlist/${productId}`, { method: "POST" }),
   recentlyViewed: () => request("/api/account/recently-viewed"),
-  recommendations: () => request("/api/account/recommendations"),
-  complaints: () => request("/api/complaints"),
-  addComplaint: (payload) =>
-    request("/api/complaints", { method: "POST", body: JSON.stringify(payload) }),
 
-  // Seller
-  sellerDashboard: (sellerId) => request(`/api/seller/${sellerId}/dashboard`),
-  createSellerProduct: (payload) =>
-    request("/api/seller/products", { method: "POST", body: JSON.stringify(payload) }),
-  updateSellerProduct: (productId, payload) =>
-    request(`/api/seller/products/${productId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  deleteSellerProduct: (productId) => request(`/api/seller/products/${productId}`, { method: "DELETE" }),
-  sellerReviews: () => request("/api/seller/reviews"),
-  respondToReview: (reviewId, response) =>
-    request(`/api/seller/reviews/${reviewId}/response`, { method: "PATCH", body: JSON.stringify({ response }) }),
-  updateSellerOrderItemStatus: (orderId, itemId, status) =>
-    request(`/api/seller/orders/${orderId}/items/${itemId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  checkout: (payload) => request("/api/orders/checkout", json(payload)),
+  createRazorpayOrder: (payload) => request("/api/orders/razorpay/create", json(payload)),
+  verifyRazorpayPayment: (payload) => request("/api/orders/razorpay/verify", json(payload)),
+  orders: () => request("/api/orders"),
+  reorder: (orderId) => request(`/api/orders/${orderId}/reorder`, { method: "POST" }),
+  complaint: (payload) => request("/api/orders/complaints", json(payload)),
 
-  // Razorpay
-  razorpayCreateOrder: () => request("/api/razorpay/create-order", { method: "POST" }),
-  razorpayVerify: (payload) =>
-    request("/api/razorpay/verify", { method: "POST", body: JSON.stringify(payload) }),
+  reviews: (productId) => request(`/api/reviews/product/${productId}`),
+  addReview: (payload) => request("/api/reviews", json(payload)),
 
-  // Admin
+  chat: (payload) => request("/api/ai/chat", json(payload)),
+  chatHistory: () => request("/api/ai/history"),
+  clearChatHistory: () => request("/api/ai/history", { method: "DELETE" }),
+
+  sellerDashboard: () => request("/api/seller/dashboard"),
+  sellerCreateProduct: (payload) => request("/api/seller/products", json(payload)),
+  sellerUpdateProduct: (id, payload) => request(`/api/seller/products/${id}`, json(payload, "PATCH")),
+  sellerDeleteProduct: (id) => request(`/api/seller/products/${id}`, { method: "DELETE" }),
+  sellerUpdateOrderItem: (id, payload) => request(`/api/seller/orders/items/${id}/status`, json(payload, "PATCH")),
+  sellerRespondReview: (id, payload) => request(`/api/seller/reviews/${id}/response`, json(payload)),
+
   adminDashboard: () => request("/api/admin/dashboard"),
-  adminUpdateUser: (userId, payload) =>
-    request(`/api/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  adminDeleteUser: (userId) => request(`/api/admin/users/${userId}`, { method: "DELETE" }),
-  adminModerateProduct: (productId, payload) =>
-    request(`/api/admin/products/${productId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  adminDeleteProduct: (productId) => request(`/api/admin/products/${productId}`, { method: "DELETE" }),
-  adminUpdateTransaction: (transactionId, payload) =>
-    request(`/api/admin/transactions/${transactionId}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  adminUpdateComplaint: (complaintId, payload) =>
-    request(`/api/admin/complaints/${complaintId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  adminUpdateUser: (id, payload) => request(`/api/admin/users/${id}`, json(payload, "PATCH")),
+  adminModerateProduct: (id, payload) => request(`/api/admin/products/${id}/moderation`, json(payload, "PATCH")),
+  adminRemoveProduct: (id) => request(`/api/admin/products/${id}`, { method: "DELETE" }),
+  adminRefund: (id, payload) => request(`/api/admin/transactions/${id}/refund`, json(payload, "PATCH")),
+  adminUpdateComplaint: (id, payload) => request(`/api/admin/complaints/${id}`, json(payload, "PATCH")),
 };

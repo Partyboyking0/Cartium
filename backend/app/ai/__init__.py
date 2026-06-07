@@ -1,0 +1,1 @@
+"""Cartium AI assistant package."""

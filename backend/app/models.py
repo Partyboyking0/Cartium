@@ -81,15 +81,30 @@ class ProductSpec(Base):
     product: Mapped[Product] = relationship(back_populates="specs")
 
 
+class Cart(Base):
+    __tablename__ = "carts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(80), default="Main cart")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped[User] = relationship()
+    items: Mapped[list["CartItem"]] = relationship(back_populates="cart", cascade="all, delete-orphan")
+
+
 class CartItem(Base):
     __tablename__ = "cart_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), default=1, index=True)
+    cart_id: Mapped[int | None] = mapped_column(ForeignKey("carts.id"), nullable=True, index=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
+    cart: Mapped[Cart | None] = relationship(back_populates="items")
     product: Mapped[Product] = relationship()
 
 

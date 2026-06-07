@@ -1,0 +1,18 @@
+[
+  {
+    "question": "How do I track my Cartium order?",
+    "answer": "Open Orders from your account menu. Cartium shows the latest order status available from your account data: Placed, Packed, Shipped, or Delivered."
+  },
+  {
+    "question": "Which payment method does Cartium support?",
+    "answer": "Cartium checkout uses Razorpay for secure UPI, card, wallet, and netbanking payments."
+  },
+  {
+    "question": "Can I manage multiple carts?",
+    "answer": "Yes. Cartium lets signed-in buyers create, rename, switch, and delete multiple carts. Checkout uses the active cart."
+  },
+  {
+    "question": "Can sellers manage inventory?",
+    "answer": "Approved sellers can add products, update stock, track low stock alerts, manage orders, and respond to reviews from the seller dashboard."
+  }
+]
